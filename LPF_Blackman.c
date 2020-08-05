@@ -9,13 +9,13 @@ convolves an array that is shifting
 
 
 // function declarations
-double convolve(int * array, double * kernel, int size);
+double convolve(double * array, double * kernel, int size);
 
-void right_shift_one(int * array, int * array_copy, int size);
+void right_shift_one(double * array, double * array_copy, int size);
 
-void copy_array(int * array, int * array_copy, int size);
+void copy_array(double * array, double * array_copy, int size);
 
-void print_array(int * array, int size);
+void print_array(double * array, int size);
 
 void Blackman_kernel(double * array, int size, double fc);
 
@@ -25,12 +25,10 @@ void Blackman_kernel(double * array, int size, double fc);
 int main()
 {
     // set up arrays
-    int data;
-    int my_array[17] = {};  // initialize to zero for padding
-    int my_array_copy[17] = {};
+    double data;
+    double my_array[17] = {};  // initialize to zero for padding
+    double my_array_copy[17] = {};
     int my_size = sizeof(my_array)/sizeof(my_array[0]);  // calculate length of array
-    
-    copy_array(my_array, my_array_copy, my_size);  // make a copy of the array for shifting
     
     // set up filter variables
     double kernel[17] = {};  // filter kernel (array of filter coefficients) MUST BE TYPE DOUBLE
@@ -56,13 +54,19 @@ int main()
         fprintf(fp1,"%f\n",kernel[ii]);
     }
     
-    while(1){
+    printf("\n");
+    
+    // real time output signal generator
+    for(int i = 0; i < 20; i++)
+    
+    {
+        copy_array(my_array, my_array_copy, my_size);  // make a copy of the array for shifting
         right_shift_one(my_array, my_array_copy, my_size);  // shift right to create an open spot
         printf("enter a value: ");
-        scanf("%d", data);  // this and the above line simulate the analog conversion being executing and finishing.
+        scanf("%f", &data);  // this and the above line simulate the analog conversion being executing and finishing.
         my_array[0] = data;  // place new data in the cleared array spot (simulating time shift)
         out = convolve(my_array,kernel,my_size);  // generate output from convolution
-        fprintf(fp2,"%f\n");  // place output result to test in MATLAB
+        fprintf(fp2,"%f\n",out);  // place output result to test in MATLAB
     }
     
     return 0;
@@ -73,7 +77,7 @@ int main()
 
 // function definitions
 
-double convolve(int * array, double * kernel, int size)  // performs a convolution
+double convolve(double * array, double * kernel, int size)  // performs a convolution
 {
     double result = 0;  // output
     
@@ -84,7 +88,7 @@ double convolve(int * array, double * kernel, int size)  // performs a convoluti
 }
 
 
-void right_shift_one(int * array, int * array_copy, int size)
+void right_shift_one(double * array, double * array_copy, int size)
 {
     for(int i = 1; i < size; i++)
     {
@@ -95,7 +99,7 @@ void right_shift_one(int * array, int * array_copy, int size)
 }
 
 
-void copy_array(int * array, int * array_copy, int size)
+void copy_array(double * array, double * array_copy, int size)
 {
     for(int k = 0; k < size; k++)  
     {
@@ -104,11 +108,11 @@ void copy_array(int * array, int * array_copy, int size)
 }
 
 
-void print_array(int * array, int size)
+void print_array(double * array, int size)
 {
     for(int ii = 0; ii < size; ii++)
     {
-        printf("%d",array[ii]);
+        printf("%f",array[ii]);
     }
 }
 
