@@ -25,7 +25,7 @@ void Blackman_kernel(double * array, int size, double fc);
 int main()
 {
     // set up arrays
-    double data;
+    float data;
     double my_array[17] = {};  // initialize to zero for padding
     double my_array_copy[17] = {};
     int my_size = sizeof(my_array)/sizeof(my_array[0]);  // calculate length of array
@@ -85,6 +85,8 @@ double convolve(double * array, double * kernel, int size)  // performs a convol
     {
         result += array[i] * kernel[i];  // sum the product of sample array and coefficient array
     }
+    
+    return result;
 }
 
 
