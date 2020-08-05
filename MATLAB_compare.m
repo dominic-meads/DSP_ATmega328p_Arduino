@@ -58,3 +58,12 @@ xout_check = convolution(x,h_check);
 subplot(2,2,4); stem(xout_check,'Linestyle','none'); title('Output Function (MATLAB)');
 
 error = max(abs(xout-xout_check))  % about 9% error. possiby from the fact that C indecies start at 0, while MATLAB starts at 1
+
+
+% check a few output samples
+fID1 = fopen('output_signal.txt','r');  % open file for reading
+data1 = textscan(fID1,'%s');  % place the data in a cell: "Cell arrays commonly contain either lists of character vectors of different lengths"
+fclose(fID1);
+xout_c = str2double(data1{1})';
+
+error_output = max(abs(xout_c-xout_check(1:20)))  % >3% error for the first 20 samples :)
