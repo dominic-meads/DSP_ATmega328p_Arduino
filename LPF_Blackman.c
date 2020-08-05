@@ -9,6 +9,8 @@ convolves an array that is shifting
 
 
 // function declarations
+double convolve(int * array, double * kernel, int size);
+
 void right_shift_one(int * array, int * array_copy, int size);
 
 void copy_array(int * array, int * array_copy, int size);
@@ -24,7 +26,7 @@ int main()
 {
     // set up arrays
     int data;
-    int my_array[17] = {};
+    int my_array[17] = {};  // initialize to zero for padding
     int my_array_copy[17] = {};
     int my_size = sizeof(my_array)/sizeof(my_array[0]);  // calculate length of array
     
@@ -35,26 +37,33 @@ int main()
     int kernel_size = sizeof(kernel)/sizeof(kernel[0]);  // calculate length of kernel
     double fc = 0.020;  // cuttoff frequency of 0.020*fsample
     
+    // output variables
+    double out;
+    
     // initialize the file output showing the FIR coefficients
-    FILE * fp;
-    fp = fopen("kernel.txt","w+");
+    FILE * fp1;
+    fp1 = fopen("kernel.txt","w+");
+    
+    // initialize the file output showing the output results
+    FILE * fp2;
+    fp2 = fopen("output_signal.txt","w+");
     
     // Generate FIR coeficients
     Blackman_kernel(kernel, kernel_size, fc);
     for(int ii = 0; ii < 17; ii++)
     {
         printf("%f ",kernel[ii]);
-        fprintf(fp,"%f\n",kernel[ii]);
+        fprintf(fp1,"%f\n",kernel[ii]);
     }
     
-    /*while(1){
+    while(1){
         right_shift_one(my_array, my_array_copy, my_size);  // shift right to create an open spot
         printf("enter a value: ");
         scanf("%d", data);  // this and the above line simulate the analog conversion being executing and finishing.
-        my_array[0] = data;  // place new data in the cleared array spot
-    }*/
-
-    print_array(my_array, my_size);
+        my_array[0] = data;  // place new data in the cleared array spot (simulating time shift)
+        out = convolve(my_array,kernel,my_size);  // generate output from convolution
+        fprintf(fp2,"%f\n");  // place output result to test in MATLAB
+    }
     
     return 0;
 }
@@ -63,6 +72,18 @@ int main()
 
 
 // function definitions
+
+double convolve(int * array, double * kernel, int size)  // performs a convolution
+{
+    double result = 0;  // output
+    
+    for(int i = 0; i < size; i++)
+    {
+        result += array[i] * kernel[i];  // sum the product of sample array and coefficient array
+    }
+}
+
+
 void right_shift_one(int * array, int * array_copy, int size)
 {
     for(int i = 1; i < size; i++)
