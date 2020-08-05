@@ -22,19 +22,24 @@ void Blackman_kernel(double * array, int size, double fc);
 
 int main()
 {
-    int my_array[8] = {0,0,1,1,0,0,0,0};
-    int my_array_copy[8] = {};
+    // set up arrays
+    int data;
+    int my_array[17] = {};
+    int my_array_copy[17] = {};
     int my_size = sizeof(my_array)/sizeof(my_array[0]);  // calculate length of array
     
     copy_array(my_array, my_array_copy, my_size);  // make a copy of the array for shifting
     
+    // set up filter variables
     double kernel[17] = {};  // filter kernel (array of filter coefficients) MUST BE TYPE DOUBLE
     int kernel_size = sizeof(kernel)/sizeof(kernel[0]);  // calculate length of kernel
     double fc = 0.020;  // cuttoff frequency of 0.020*fsample
     
+    // initialize the file output showing the FIR coefficients
     FILE * fp;
     fp = fopen("kernel.txt","w+");
     
+    // Generate FIR coeficients
     Blackman_kernel(kernel, kernel_size, fc);
     for(int ii = 0; ii < 17; ii++)
     {
@@ -42,7 +47,13 @@ int main()
         fprintf(fp,"%f\n",kernel[ii]);
     }
     
-    right_shift_one(my_array, my_array_copy, my_size);
+    while(1){
+        right_shift_one(my_array, my_array_copy, my_size);  // shift right to create an open spot
+        printf("enter a value: ");
+        scanf("%d", data);  // this and the above line simulate the analog conversion being executing and finishing.
+        my_array[0] = data;  // place new data in the cleared array spot
+    }
+
     print_array(my_array, my_size);
     
     return 0;
