@@ -47,12 +47,12 @@ int main()
         fprintf(fp,"%f\n",kernel[ii]);
     }
     
-    while(1){
+    /*while(1){
         right_shift_one(my_array, my_array_copy, my_size);  // shift right to create an open spot
         printf("enter a value: ");
         scanf("%d", data);  // this and the above line simulate the analog conversion being executing and finishing.
         my_array[0] = data;  // place new data in the cleared array spot
-    }
+    }*/
 
     print_array(my_array, my_size);
     
@@ -94,6 +94,8 @@ void print_array(int * array, int size)
 
 void Blackman_kernel(double * h, int size, double fc)
 {
+    double k = 0;  // init normalization coefficient
+    
     for(int i = 0; i < size; i++)
     {
         h[i] = (sin(2*M_PI*fc*(i-size/2))/(i-size/2)) * (0.42 - 0.5*cos(2*M_PI*i/size) + 0.08*cos(4*M_PI*i/size));  // the Blackman window has great stop band attenuation
@@ -103,5 +105,13 @@ void Blackman_kernel(double * h, int size, double fc)
         {
            h[i] = 2*M_PI*fc;  // take care of Nan 
         }
+    }
+    
+    for(int ii = 0; ii < size; ii++){  // calculate normalization coefficient
+        k += h[ii];
+    }
+    
+    for(int iii = 0; iii < size; iii++){  // normalize array
+        h[iii] = h[iii]/k;
     }
 }
