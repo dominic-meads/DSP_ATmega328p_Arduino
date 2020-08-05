@@ -34,26 +34,27 @@ fclose(fID);
 h = str2double(data{1})';  % convert elements in the cell to type "double"
 
 n1 = 0:16;
-figure;
-stem(n1,h);
+subplot(2,2,1); stem(n1,h); title('C generated Kernel');
 
 
 % convolve filter
 xout = convolution(x,h);
-figure;
 % stem(xout);
-stem(xout,'Linestyle','none');
+subplot(2,2,3); stem(xout,'Linestyle','none'); title('Output Function (C)');
 
 
-%%  MATLAB check
+
+% ------------------------------------------------------------------------------------------
+%  MATLAB check
+% ------------------------------------------------------------------------------------------
 
 % check kernel
 h_check = win_sinc(0.25,0.02,2);
-figure;
-stem(n1,h_check);
+subplot(2,2,2); stem(n1,h_check); title('MATLAB generated Kernel');
 
 % convolve filter
 xout_check = convolution(x,h_check);
-figure;
 % stem(xout_check);
-stem(xout_check,'Linestyle','none');
+subplot(2,2,4); stem(xout_check,'Linestyle','none'); title('Output Function (MATLAB)');
+
+error = max(abs(xout-xout_check))  % about 9% error. possiby from the fact that C indecies start at 0, while MATLAB starts at 1
