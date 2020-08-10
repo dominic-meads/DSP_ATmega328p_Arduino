@@ -1,36 +1,69 @@
-% Test signal was a 1V amplitude, 50 Hz sine wave with a 2.5V offset. Test
-% noise of 1.1 KHz was added to evaluate filter performance. 
+%%  Test
 
-% The cuttoff frequency of the filter was 0.02*fs or 56 Hz. 
+% set up test signal
+fs = 500;           % sampling frequency
+Ts = 1/fs;          % Sampling Period
+n = 0:fs-1;          % Samples
+t = n*Ts;           % sampling instances
+x = sin(5*2*pi*t) + 0.5*sin(200*2*pi*t);  % signal
+
+figure('Color',[1 1 1]);
+b = plot(n,x,'.');
+grid on;
+xlabel('sample #');
+ylabel('f[n]');
+set(b,'Color', [1 0.4 0.4]);
+set(b,'MarkerSize',8);
+hold on;
+b = plot(n,x);
+box off;
+set(b,'Linewidth',.5);
+set(b,'Color', [0.4 0.4 1]);
+
+figure;
+%stem(x);
+stem(x,'Linestyle','none');
+% --------------------------------------------------
 
 
-% below are some output samples from the chip (taken using a logic analyzer)
-fID = fopen('logic_bus_output_kernel_length_17.txt', 'r');
-data = textscan(fID,'%s');
+% kernel from C
+fID = fopen('filter_kernel.txt','r');  % open file for reading
+data = textscan(fID,'%s');  % place the data in a cell: "Cell arrays commonly contain either lists of character vectors of different lengths"
 fclose(fID);
-x = str2double(data{1}(1:300))';
-n = 0:length(x)-1;
 
-subplot(2,2,1); stem(n,x,'Linestyle','none'); title('output samples');
-subplot(2,2,2); stairs(n,x); title('ZOH');
-subplot(2,2,3); plot(n,x); title('FOH'); 
+h = str2double(data{1})';  % convert elements in the cell to type "double"
 
-% The period is about 54 samples
+n1 = 0:16;
+subplot(2,2,1); stem(n1,h); title('C generated Kernel');
 
-% Each sample on logic analyzer takes 383.7us, which gives a frequency of
-% about 46 Hz, very close to input 50 Hz.
 
-% The max for a 10 bit output is 1024, input signal was 1V amplitude with
-% 2.5V offset. Looking at the figures, the offset is around 500 units, with
-% 500/1024 =~ 0.5. This is acceptable because 2.5V is half of the reference
-% voltage on the chip.
+% convolve filter
+xout = convolution(x,h);
+% stem(xout);
+subplot(2,2,3); stem(xout,'Linestyle','none'); title('Output Function (C)');
 
-% Max = 725, and min = 290, averaging a 217 unit swing, (217/1024)*5V =~ 1V
-% which is also acceptable because the input target signal swings between
-% 3.5V and 1.5V
 
-% Visual simililarity to a sinusoid is ok. 
 
-% Overall, both interpolations show acceptable analog reconstruction (the
-% code works!!!!!)
+% ------------------------------------------------------------------------------------------
+%  MATLAB check
+% ------------------------------------------------------------------------------------------
 
+% check kernel
+h_check = win_sinc(0.25,0.02,2);
+subplot(2,2,2); stem(n1,h_check); title('MATLAB generated Kernel');
+
+% convolve filter
+xout_check = convolution(x,h_check);
+% stem(xout_check);
+subplot(2,2,4); stem(xout_check,'Linestyle','none'); title('Output Function (MATLAB)');
+
+error = max(abs(xout-xout_check))  % about 9% error. possiby from the fact that C indecies start at 0, while MATLAB starts at 1
+
+
+% check a few output samples
+fID1 = fopen('output_signal.txt','r');  % open file for reading
+data1 = textscan(fID1,'%s');  % place the data in a cell: "Cell arrays commonly contain either lists of character vectors of different lengths"
+fclose(fID1);
+xout_c = str2double(data1{1})';
+
+error_output = max(abs(xout_c-xout_check(1:20)))  % >3% error for the first 20 samples :)
