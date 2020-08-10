@@ -5,10 +5,13 @@
 
 
 % below are some output samples from the chip (taken using a logic analyzer)
-x = [289, 295, 303, 314, 358, 372, 389, 406, 458, 478, 435, 489, 511, 533, 587, 544, 565, 616, 633, 649, 662, 705, 714, 719, 724, 725, 726, 723, 720, 715, 708, 667, 654, 640, 623, 572, 552, 594, 541, 518, 496, 442, 420, 464, 412, 393, 376, 361, 316, 305, 296,290, 350, 348, 350, 289, 294, 302, 311, 355, 369, 385, 402, 453, 474, 430, 484, 506, 528, 582, 603, 559, 611, 628];
+fID = fopen('logic_bus_output_kernel_length_17.txt', 'r');
+data = textscan(fID,'%s');
+fclose(fID);
+x = str2double(data{1}(1:300))';
 n = 0:length(x)-1;
 
-subplot(2,2,1); stem(n,x); title('output samples');
+subplot(2,2,1); stem(n,x,'Linestyle','none'); title('output samples');
 subplot(2,2,2); stairs(n,x); title('ZOH');
 subplot(2,2,3); plot(n,x); title('FOH'); 
 
@@ -30,3 +33,4 @@ subplot(2,2,3); plot(n,x); title('FOH');
 
 % Overall, both interpolations show acceptable analog reconstruction (the
 % code works!!!!!)
+
