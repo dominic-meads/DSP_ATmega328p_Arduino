@@ -34,6 +34,20 @@ subplot(2,2,4); plot(n,(x/1023)*5); title('FOH'); axis([0 150 1.5 3.5]); xlabel(
 % Max = 2.854 and min = 2.175, averaging about a 0.34V amplitude.
 % (amplitude a bit higher than expected)
 
+% The below code shows the frequency response of the filter. (found by taking
+% the dtft of the impulse response (filter kernel).
+h = [0 0.0014 0.0066 0.0175 0.0356 0.0600 0.0870 0.1104 0.1257 0.1236 0.1095 0.0858 0.0589 0.0347 0.0170 0.0064 0.0014];
+nh = 0:16;
+k = 0:500;
+w = (k/500)*2*pi*0.5*2800;
+
+H = dtft(nh,h,k);
+
+figure;
+plot(w/(2*pi*2800),abs(H)/max(abs(H))); title('frequency response'); xlabel('frequency expressed as a fraction of fs'); ylabel('magnitude'); axis([0 0.5 0 1.2]);
+
+% Note the small stopband ripple characteristic of a Blackman window
+
 % Visual simililarity to a sinusoid is good. 
 
 % Overall, both interpolations show acceptable analog reconstruction (the
