@@ -2,8 +2,8 @@
  * Blackman_LPF.c
  *
  *
- * Sampling frequency = 2.95 KHz (Nyquist = 1.525 KHz)
- * Creates a LPF with a cuttoff frequency = 59 Hz (0.02*fs). Output to a 10-bit R2R DAC
+ * Sampling frequency = 3.92 KHz (Nyquist = 1.96 KHz)
+ * Creates a LPF with a cuttoff frequency = 78.4 Hz (0.02*fs). Output to a 10-bit R2R DAC
  *
  *
  * 8/6/2020
@@ -11,27 +11,29 @@
  */ 
 
 #include <avr/io.h>
-#include <avr/interrupt.h>   // for sei function
+#include <stdint.h>           // int to uint16_t for optimization
+#include <avr/interrupt.h>    // for sei function
 #include <math.h>             // for trig functions
+
 
 
 
 // function declarations
 	// ADC 
-void ADC_init();            // initialize ADC in single conversion mode
-void Start_conversion();    // run a single conversion on input channel A1
-int ADC_get_data();         // read ADC data registers in appropriate order
+void ADC_init();                 // initialize ADC in single conversion mode
+void Start_conversion();         // run a single conversion on input channel A1
+uint16_t ADC_get_data();         // read ADC data registers in appropriate order
 	// DSP
-double convolve(double * array, double * kernel, int size);    // performs a convolution between two input arrays, returns single value
-void Blackman_kernel(double * array, int size, double fc);     // generates the FIR filter coefficients based on windoww type and cuttoff frequency
+float convolve(uint16_t * array, float * kernel, uint8_t size);    // performs a convolution between two input arrays, returns single value
+void Blackman_kernel(float * array, uint8_t size, float fc);       // generates the FIR filter coefficients based on windoww type and cuttoff frequency
 	// Array
-void right_shift_one(double * array, int size);  // right shifts each element in the array by one place
+void right_shift_one(uint16_t * array, uint8_t size);  // right shifts each element in the array by one place
 // end function declarations
 
 
 
 // Global Variables (for access by ISR)
-int ADC_data = 0;
+uint16_t ADC_data = 0;
 // end global variables
 
 
@@ -42,16 +44,16 @@ int main(void)
     DDRD = 0b11111100;  // PD7 down to PD2 will be the bottom 6 bits of the 10 bit output to the R2R DAC (PD2 = LSB)
 	
 	// input variables
-	double signal[17] = {};                                // MUST INITIALIZE TO ZERO FOR PADDING
-	int signal_length = sizeof(signal)/sizeof(signal[0]);  // length of "signal" 	
+	uint16_t signal[17] = {};                                   // MUST INITIALIZE TO ZERO FOR PADDING
+	uint8_t signal_length = sizeof(signal)/sizeof(signal[0]);  // length of "signal" 	
 	// DSP variables
-	double kernel[17] = {};                                // filter kernel (array of filter coefficients) MUST BE TYPE DOUBLE
-	int kernel_length = sizeof(kernel)/sizeof(kernel[0]);  // calculate length of kernel
-	double fc = 0.020;                                     // cuttoff frequency of 0.020*fsample
+	float kernel[17] = {};                                 // filter kernel (array of filter coefficients) MUST BE TYPE FLOAT OR DOUBLE
+	uint8_t kernel_length = sizeof(kernel)/sizeof(kernel[0]);  // calculate length of kernel
+	float fc = 0.020;                                      // cuttoff frequency of 0.020*fsample
 	
 	// output variables 
-	double out = 0;      // A convolution only returns one output, which will be type double
-	int out_adjust = 0;  // the R2R DAC is 10 bits, thus the "out" variable must be approximated to a variable that can be an input to the DAC (int)
+	float out = 0;       // A convolution only returns one output, which will be type float
+	uint16_t out_adjust = 0;  // the R2R DAC is 10 bits, thus the "out" variable must be approximated to a variable that can be an input to the DAC (int)
 	
 	sei();               // enable global interrupts
 	
@@ -88,9 +90,9 @@ int main(void)
 		ADCSRA |= (1 << ADSC);  // start conversion (the ADSC bit will clear upon successful conversion, need to set again to start another)
 	}
 	
-	int ADC_get_data()
+	uint16_t ADC_get_data()
 	{
-		int ADC_data;
+		uint16_t ADC_data;
 		ADC_data = ADCL;  // ADCL must be read before ADCH
 		ADC_data |= (ADCH << 8);  // shift and place the MSB and MSB-1 into the data
 		
@@ -98,21 +100,21 @@ int main(void)
 	}
 	
 	// DSP
-	double convolve(double * array, double * kernel, int size)  // performs a convolution
+	float convolve(uint16_t * array, float * kernel, uint8_t size)  // performs a convolution
 	{
-		double result = 0;  // output
-		for(int i = 0; i < size; i++)
+		float result = 0;  // output
+		for(uint8_t i = 0; i < size; i++)
 		{
-			result += array[i] * kernel[i];  // sum of the product of sample array and coefficient array (element by element multiplication)
+			result += array[i] * kernel[i];  // MAC
 		}
 		
 		return result;
 	}
 	
-	void Blackman_kernel(double * h, int size, double fc)
+	void Blackman_kernel(float * h, uint8_t size, float fc)
 	{
-		double k = 0;  // init normalization coefficient
-		for(int i = 0; i < size; i++)
+		float k = 0;  // init normalization coefficient
+		for(uint8_t i = 0; i < size; i++)
 		{
 			h[i] = (sin(2*M_PI*fc*(i-size/2))/(i-size/2)) * (0.42 - 0.5*cos(2*M_PI*i/size) + 0.08*cos(4*M_PI*i/size));  // the Blackman window has great stop band attenuation, but slower rolloff than the Hamming window
 			//     ^-------------sinc function----------^   ^-------------------Blackman window---------------------^
@@ -121,19 +123,19 @@ int main(void)
 				h[i] = 2*M_PI*fc;  // take care of Nan case
 			}
 		}
-		for(int ii = 0; ii < size; ii++){  // calculate normalization coefficient
+		for(uint8_t ii = 0; ii < size; ii++){  // calculate normalization coefficient
 			k += h[ii];
 		}
 		    
-		for(int iii = 0; iii < size; iii++){  // normalize array
+		for(uint8_t iii = 0; iii < size; iii++){  // normalize array
 			h[iii] = h[iii]/k;
 		}
 	}
 	
 	// Array
-	void right_shift_one(double * array, int size)
+	void right_shift_one(uint16_t * array, uint8_t size)
 	{
-		for(int i = size - 1; i > 0; i--)
+		for(uint8_t i = size - 1; i > 0; i--)
 		{
 			array[i]=array[i-1];
 		}
