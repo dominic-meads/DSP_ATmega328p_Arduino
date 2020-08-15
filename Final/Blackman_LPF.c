@@ -2,8 +2,8 @@
  * Blackman_LPF.c
  *
  *
- * Sampling frequency = 2.8 KHz (Nyquist = 1.4 KHz)
- * Creates a LPF with a cuttoff frequency = 56 Hz (0.02*fs). Output to a 10-bit R2R DAC
+ * Sampling frequency = 2.95 KHz (Nyquist = 1.525 KHz)
+ * Creates a LPF with a cuttoff frequency = 59 Hz (0.02*fs). Output to a 10-bit R2R DAC
  *
  *
  * 8/6/2020
@@ -25,8 +25,7 @@ int ADC_get_data();         // read ADC data registers in appropriate order
 double convolve(double * array, double * kernel, int size);    // performs a convolution between two input arrays, returns single value
 void Blackman_kernel(double * array, int size, double fc);     // generates the FIR filter coefficients based on windoww type and cuttoff frequency
 	// Array
-void right_shift_one(double * array, double * array_copy, int size);  // right shifts each element in the array by one place
-void copy_array(double * array, double * array_copy, int size);       // in order to perform ^, a copy of the array must first be made
+void right_shift_one(double * array, int size);  // right shifts each element in the array by one place
 // end function declarations
 
 
@@ -44,9 +43,7 @@ int main(void)
 	
 	// input variables
 	double signal[17] = {};                                // MUST INITIALIZE TO ZERO FOR PADDING
-	double copy[17] = {};                                  // for the "copy_array" function
-	int signal_length = sizeof(signal)/sizeof(signal[0]);  // length of both "signal" and " copy will be the same 
-	
+	int signal_length = sizeof(signal)/sizeof(signal[0]);  // length of "signal" 	
 	// DSP variables
 	double kernel[17] = {};                                // filter kernel (array of filter coefficients) MUST BE TYPE DOUBLE
 	int kernel_length = sizeof(kernel)/sizeof(kernel[0]);  // calculate length of kernel
@@ -64,8 +61,7 @@ int main(void)
 		
     while (1) 
     {
-		copy_array(signal,copy,signal_length);        // make a copy for shifting
-		right_shift_one(signal,copy,signal_length);   // shift the signal array to clear a spot for new ADC value
+		right_shift_one(signal,signal_length);   // shift the signal array to clear a spot for new ADC value
 		Start_conversion();                           // start the ADC conversion, ISR will take over and put the data into the global variable "ADC_data"
 		signal[0] = ADC_data;                         // put the ADC result into the open signal spot
 		out = convolve(signal,kernel,kernel_length);  // perform the convolution with the filter kernel
@@ -135,21 +131,13 @@ int main(void)
 	}
 	
 	// Array
-	void right_shift_one(double * array, double * array_copy, int size)
+	void right_shift_one(double * array, int size)
 	{
-		for(int i = 1; i < size; i++)
+		for(int i = size - 1; i > 0; i--)
 		{
-			array[i] = array_copy[i-1];  // shift one to right (>>)
+			array[i]=array[i-1];
 		}
-		array[0] = 0;  // shift in a zero
-	}
-	
-	void copy_array(double * array, double * array_copy, int size)
-	{
-		for(int i = 0; i < size; i++)
-		{
-			array_copy[i] = array[i];
-		}
+		array[0]=0;
 	}
 // end function definitions
 
